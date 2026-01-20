@@ -104,6 +104,7 @@ pyinstaller --onefile --noconsole --name RemoteCameraClient windows_client.py
 4. 点击"拍摄照片"按钮发送拍摄指令
 5. 拍摄完成后，照片会自动显示在照片列表中
 6. 点击"下载"按钮可下载对应照片
+7. 请将此文件上传到`server.py`同一目录下
 
 ## 技术实现细节
 
@@ -145,3 +146,4 @@ pyinstaller --onefile --noconsole --name RemoteCameraClient windows_client.py
 
 
 **免责声明**：本项目仅用于学习和合法授权的场景，请勿用于非法用途。使用本项目产生的一切后果由使用者自行承担。
+

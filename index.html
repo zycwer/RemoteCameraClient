@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>远程摄像头控制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #4285f4;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            font-size: 16px;
+        }
+        
+        .status.online {
+            color: #34a853;
+        }
+        
+        .status.offline {
+            color: #ea4335;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #4285f4;
+        }
+        
+        .control-section {
+            text-align: center;
+        }
+        
+        #shootBtn {
+            background-color: #ea4335;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(234, 67, 53, 0.3);
+        }
+        
+        #shootBtn:hover {
+            background-color: #d93025;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(234, 67, 53, 0.4);
+        }
+        
+        #shootBtn:active {
+            transform: translateY(0);
+        }
+        
+        #shootBtn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .clients-list {
+            margin-top: 15px;
+        }
+        
+        .client-item {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .photos-section {
+            grid-column: 1 / -1;
+        }
+        
+        #photosList {
+            margin-top: 15px;
+        }
+        
+        .photo-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .photo-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .photo-info {
+            flex: 1;
+        }
+        
+        .photo-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .photo-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .download-btn {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background-color: #2d8c46;
+        }
+        
+        .refresh-btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #4285f4;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .count-badge {
+            background-color: #34a853;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📷 远程摄像头控制</h1>
+            <div class="status">
+                <span id="serverStatus" class="offline">服务器状态：离线</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="card control-section">
+                <h2>🎯 拍摄控制</h2>
+                <button id="shootBtn" disabled>拍摄照片</button>
+                <div id="controlMessage"></div>
+            </div>
+            
+            <div class="card">
+                <h2>👥 在线客户端 <span id="clientsCount" class="count-badge">0</span></h2>
+                <div class="clients-list">
+                    <div id="clientsList">
+                        <div style="text-align: center; color: #666; font-style: italic;">暂无在线客户端</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card photos-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>🖼️ 照片列表 <span id="photosCount" class="count-badge">0</span></h2>
+                    <button id="refreshBtn" class="refresh-btn">刷新列表</button>
+                </div>
+                <div id="photosList">
+                    <div style="text-align: center; color: #666; font-style: italic;">暂无照片</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Socket.IO 和 jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    
+    <script>
+        // Socket.IO 连接
+        const socket = io();
+        
+        // DOM 元素
+        const serverStatus = document.getElementById('serverStatus');
+        const shootBtn = document.getElementById('shootBtn');
+        const controlMessage = document.getElementById('controlMessage');
+        const clientsList = document.getElementById('clientsList');
+        const clientsCount = document.getElementById('clientsCount');
+        const photosList = document.getElementById('photosList');
+        const photosCount = document.getElementById('photosCount');
+        const refreshBtn = document.getElementById('refreshBtn');
+        
+        // 当前在线客户端
+        let onlineClients = [];
+        
+        // 显示消息
+        function showMessage(message, type = 'info') {
+            controlMessage.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => {
+                controlMessage.innerHTML = '';
+            }, 3000);
+        }
+        
+        // 更新客户端列表
+        function updateClientsList() {
+            if (onlineClients.length === 0) {
+                clientsList.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">暂无在线客户端</div>';
+                shootBtn.disabled = true;
+            } else {
+                clientsList.innerHTML = onlineClients.map(clientId => 
+                    `<div class="client-item">🟢 ${clientId}</div>`
+                ).join('');
+                shootBtn.disabled = false;
+            }
+            clientsCount.textContent = onlineClients.length;
+        }
+        
+        // 加载照片列表
+        function loadPhotos() {
+            $.ajax({
+                url: '/photos',
+                method: 'GET',
+                success: function(photos) {
+                    if (photos.length === 0) {
+                        photosList.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">暂无照片</div>';
+                    } else {
+                        photosList.innerHTML = photos.map(photo => {
+                            const date = new Date(photo.timestamp * 1000);
+                            const formattedDate = date.toLocaleString('zh-CN');
+                            const size = (photo.size / 1024).toFixed(2);
+                            return `
+                                <div class="photo-item">
+                                    <div class="photo-info">
+                                        <div class="photo-name">${photo.filename}</div>
+                                        <div class="photo-meta">
+                                            ${formattedDate} • ${size} KB
+                                        </div>
+                                    </div>
+                                    <a href="/photos/${photo.filename}" class="download-btn" download>
+                                        下载
+                                    </a>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    photosCount.textContent = photos.length;
+                },
+                error: function() {
+                    showMessage('加载照片列表失败', 'error');
+                }
+            });
+        }
+        
+        // Socket.IO 事件处理
+        socket.on('connect', function() {
+            console.log('已连接到服务器');
+            serverStatus.className = 'status online';
+            serverStatus.innerHTML = '服务器状态：在线';
+            
+            // 加载客户端列表
+            $.ajax({
+                url: '/clients',
+                method: 'GET',
+                success: function(clients) {
+                    onlineClients = clients;
+                    updateClientsList();
+                }
+            });
+            
+            // 加载照片列表
+            loadPhotos();
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('与服务器断开连接');
+            serverStatus.className = 'status offline';
+            serverStatus.innerHTML = '服务器状态：离线';
+            onlineClients = [];
+            updateClientsList();
+        });
+        
+        socket.on('client_connected', function(data) {
+            console.log('客户端连接：', data.client_id);
+            if (!onlineClients.includes(data.client_id)) {
+                onlineClients.push(data.client_id);
+                updateClientsList();
+            }
+        });
+        
+        socket.on('client_disconnected', function(data) {
+            console.log('客户端断开：', data.client_id);
+            onlineClients = onlineClients.filter(id => id !== data.client_id);
+            updateClientsList();
+        });
+        
+        // 拍摄按钮点击事件
+        shootBtn.addEventListener('click', function() {
+            shootBtn.disabled = true;
+            shootBtn.innerHTML = '<div class="loading"></div> 发送中...';
+            
+            $.ajax({
+                url: '/shoot',
+                method: 'POST',
+                success: function(response) {
+                    showMessage('拍摄指令已发送，等待照片上传...', 'success');
+                    console.log('拍摄指令发送成功');
+                    
+                    // 3秒后重新加载照片列表
+                    setTimeout(() => {
+                        loadPhotos();
+                    }, 3000);
+                },
+                error: function() {
+                    showMessage('拍摄指令发送失败', 'error');
+                },
+                complete: function() {
+                    shootBtn.disabled = false;
+                    shootBtn.innerHTML = '拍摄照片';
+                }
+            });
+        });
+        
+        // 刷新照片列表
+        refreshBtn.addEventListener('click', function() {
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<div class="loading"></div> 刷新中...';
+            
+            loadPhotos();
+            
+            // 同时刷新客户端列表
+            $.ajax({
+                url: '/clients',
+                method: 'GET',
+                success: function(clients) {
+                    onlineClients = clients;
+                    updateClientsList();
+                }
+            });
+            
+            setTimeout(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '刷新列表';
+            }, 500);
+        });
+        
+        // 初始化
+        console.log('远程摄像头控制界面已加载');
+    </script>
+</body>
+</html>
